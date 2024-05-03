@@ -1,5 +1,31 @@
 from collections import UserDict
 from datetime import datetime, timedelta
+from abc import abstractmethod, ABC
+import pickle
+
+def save_data(book, filename="addressbook.pkl"):
+    with open(filename, "wb") as f:
+        pickle.dump(book, f)
+
+def load_data(filename="addressbook.pkl"):
+    try:
+        with open(filename, "rb") as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        return AddressBook()  # Повернення нової адресної книги, якщо файл не знайдено
+
+# декоратор для обробки помилки ValueError
+def input_error(func):
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ValueError:
+            return "Give me name and phone please."
+        except KeyError:   
+            return "Give me correct name/phone/birthday please."  
+        except IndexError:
+            return "There is no result. Give me name/phone/birthday please."
+    return inner
 
 class Field:
     def __init__(self, value):
@@ -27,7 +53,6 @@ class Birthday(Field):
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
         
-
 class Record:
     def __init__(self, name):
         self.name = Name(name)
@@ -50,7 +75,7 @@ class AddressBook(UserDict):
     def add_record(self, obj_rec): 
         self.data[obj_rec.name.value] = obj_rec
 
-    def find(self, name): #
+    def find(self, name): 
         for nm in self.data:
             if nm == name:
                 return self.data[name].phone.value
@@ -79,3 +104,52 @@ class AddressBook(UserDict):
             else:
                 continue
         return "-----------------"    
+
+class OutputVariants(ABC):
+    @abstractmethod
+    def show_phone(self):
+        pass
+
+    @abstractmethod
+    def show_all(self):
+        pass
+
+    @abstractmethod
+    def show_birthday(self):
+        pass
+
+    @abstractmethod
+    @input_error
+    def congrats(self):
+        pass
+
+class OutputTerminal(OutputVariants):
+    # функція виведення існуючого контакту по імені
+    @input_error
+    def show_phone(self, args, book):
+        self.name = args[0]
+        return book.find(self.name)
+    
+    # функція виведення всіх контактів
+    @input_error
+    def show_all(self, book):
+        for key, record in book.data.items():
+            print(record)
+        return "--------------" 
+    
+    # функція виведення ДР контакту по імені
+    @input_error
+    def show_birthday(self, args, book): 
+        self.name = args[0]
+        for nm in book.data:
+            if (nm == self.name) and (book.data[self.name].birthday):
+                return book.data[self.name].birthday.value
+            elif nm != self.name:
+                continue
+            else:
+                return "No contact with this name or no added birthday!"
+    
+    # функція виведення всіх контактів з ДР на цьому тижні
+    @input_error  
+    def congrats(self, book): 
+        return book.get_upcoming_birthdays()
