@@ -1,31 +1,7 @@
 from collections import UserDict
 from datetime import datetime, timedelta
 from abc import abstractmethod, ABC
-import pickle
-
-def save_data(book, filename="addressbook.pkl"):
-    with open(filename, "wb") as f:
-        pickle.dump(book, f)
-
-def load_data(filename="addressbook.pkl"):
-    try:
-        with open(filename, "rb") as f:
-            return pickle.load(f)
-    except FileNotFoundError:
-        return AddressBook()  # Повернення нової адресної книги, якщо файл не знайдено
-
-# декоратор для обробки помилки ValueError
-def input_error(func):
-    def inner(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except ValueError:
-            return "Give me name and phone please."
-        except KeyError:   
-            return "Give me correct name/phone/birthday please."  
-        except IndexError:
-            return "There is no result. Give me name/phone/birthday please."
-    return inner
+from input_error import input_error
 
 class Field:
     def __init__(self, value):
@@ -63,7 +39,7 @@ class Record:
         self.phone = Phone(phone)
 
     def edit_phone(self, new_phone): 
-        self.phone.value = new_phone
+        self.phone.value = Phone(new_phone)
             
     def add_birthday(self, birthday):
             self.birthday = Birthday(birthday)
@@ -119,7 +95,6 @@ class OutputVariants(ABC):
         pass
 
     @abstractmethod
-    @input_error
     def congrats(self):
         pass
 
@@ -150,6 +125,6 @@ class OutputTerminal(OutputVariants):
                 return "No contact with this name or no added birthday!"
     
     # функція виведення всіх контактів з ДР на цьому тижні
-    @input_error  
+    @input_error
     def congrats(self, book): 
         return book.get_upcoming_birthdays()

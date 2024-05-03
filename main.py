@@ -1,5 +1,5 @@
-from contacts_processing import *
-from addressbook import *
+from contacts_processing import load_data, parse_input, save_data, add_contact, change_contact, add_birth
+from addressbook import OutputTerminal
 
 def main():
     print("Welcome to the assistant bot!")
